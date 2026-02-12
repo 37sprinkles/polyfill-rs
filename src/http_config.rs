@@ -25,7 +25,15 @@ pub async fn prewarm_connections(client: &Client, base_url: &str) -> Result<(), 
 /// Create an optimized HTTP client for low-latency trading
 /// Benchmarked configuration: 309.3ms vs 349ms baseline (11.4% faster)
 pub fn create_optimized_client() -> Result<Client, reqwest::Error> {
-    ClientBuilder::new()
+    let mut builder = ClientBuilder::new();
+
+    if let Ok(proxy_server) = std::env::var("POLYMARKET_PROXY_SERVER") {
+        builder = builder
+            .resolve("clob.polymarket.com", proxy_server.parse().unwrap())
+            .danger_accept_invalid_certs(true)
+    }
+
+    builder
         // Avoid reading OS proxy settings (can be slow and/or unavailable in some sandboxed envs)
         .no_proxy()
         // Connection pooling optimizations - aggressive reuse
@@ -81,7 +89,15 @@ pub fn create_colocated_client() -> Result<Client, reqwest::Error> {
 /// Create a client optimized for high-latency environments
 /// (more conservative settings for internet connections)
 pub fn create_internet_client() -> Result<Client, reqwest::Error> {
-    ClientBuilder::new()
+    let mut builder = ClientBuilder::new();
+
+    if let Ok(proxy_server) = std::env::var("POLYMARKET_PROXY_SERVER") {
+        builder = builder
+            .resolve("clob.polymarket.com", proxy_server.parse().unwrap())
+            .danger_accept_invalid_certs(true)
+    }
+
+    builder
         // Avoid reading OS proxy settings (can be slow and/or unavailable in some sandboxed envs)
         .no_proxy()
         // Conservative connection pooling
